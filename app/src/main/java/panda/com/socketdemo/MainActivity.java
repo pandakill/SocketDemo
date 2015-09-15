@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 
 public class MainActivity extends Activity {
@@ -20,6 +23,10 @@ public class MainActivity extends Activity {
 
     private BufferedReader mReader;
     private PrintWriter mWriter;
+
+    private WebView mBrowser;
+    private String mString = "";
+    private String mCode;
 
     private final static String HOST = "www.baidu.com"; // 百度的ip地址 180.97.33.107
     private final static int POST = 443; //百度的端口 80
@@ -56,6 +63,20 @@ public class MainActivity extends Activity {
                 // 设置true,是将返回结果以字节流形式获取
                 mSocket = new Socket(HOST, POST);
 
+                // 处理连接异常
+                if ( ! mSocket.isConnected() )
+                {
+                    Log.e("mThread/error", "socket未连接");
+                    return;
+                }
+
+                // 发送请求消息
+                if ( mSocket.isOutputShutdown( ) )
+                {
+                    Log.e("mThread/error", "socket输出流被关闭,无法发送请求");
+                    return;
+                }
+
                 System.out.println("mThread:" + mSocket.getLocalAddress());
                 mWriter = new PrintWriter(new OutputStreamWriter(mSocket.getOutputStream()));
 
@@ -66,37 +87,34 @@ public class MainActivity extends Activity {
                 mWriter.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
                 mWriter.println("Accept-Encoding: gzip, deflate");
                 mWriter.println("Connection: keep-alive");
-                mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
 
                 mWriter.flush();
 
-                try {
-                    // 设定读取的字节数
-                    byte buffer[] = new byte[2048];
-                    boolean flag = true;
-//                    String str = mReader.readLine();
-//                    InputStream in = mSocket.getInputStream();
-//                    while (in.read(buffer) != -1) {
-//                        Log.i("mReadThread", "buffer:"+new String(buffer));
-//                    }
-//                    InputStreamReader reader = new InputStreamReader(in);
-//                    BufferedReader breader = new BufferedReader(reader);
-                    // 读取socket返回的字节流
-                    while (flag) {
-                        String str = mReader.readLine();
-                        if (str != null) {
-                            Log.i("mReadThread", str);
-                        }
-                        if (mReader.read() == -1) {
-                            flag =false;
-                        }
-                    }
-                    msg.what = HANDLED;
-                    mHandler.sendMessage(msg);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                // 读取响应消息
+                if ( mSocket.isInputShutdown( ) )
+                {
+                    Log.e("mThread/error", "socket输入流被关闭,无法读取响应消息");
+                    return;
                 }
+                mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
 
+                boolean flag = true;
+                // 读取socket返回的字节流
+                while (flag) {
+                    String str = mReader.readLine();
+                    if (str != null) {
+                        Log.i("mReadThread", str);
+                        mString += str;
+                    }
+                    if (mReader.read() == -1) {
+                        flag =false;
+                    }
+                }
+                msg.what = HANDLED;
+                mHandler.sendMessage(msg);
+
+            } catch (UnknownHostException ee){
+                ee.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -108,6 +126,24 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // 初始化webview控件
+        mBrowser = (WebView) findViewById(R.id.browser);
+
+        mBrowser.getSettings().setJavaScriptEnabled(true);
+        mBrowser.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                setTitle("Loading");
+                setProgress(newProgress * 100);
+                if (newProgress == 100) {
+                    setTitle(R.string.app_name);
+                }
+            }
+        });
+        mCode = "<html><head>test</head><body>hello world<a href='www.baidu.com'></a></body></html>";
+//        mBrowser.loadUrl("www.baidu.com");
+        mBrowser.loadData(mCode, "text/html","UTF-8");
 
         // 启动线程,连接socket
         mThread.start();
