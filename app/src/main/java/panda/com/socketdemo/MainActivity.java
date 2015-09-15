@@ -16,6 +16,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import panda.com.socketdemo.utils.ResponseUtil;
+
 
 public class MainActivity extends Activity {
 
@@ -105,11 +107,17 @@ public class MainActivity extends Activity {
                     if (str != null) {
                         Log.i("mReadThread", str);
                         mString += str;
+                        mString += "\n";
                     }
                     if (mReader.read() == -1) {
                         flag =false;
                     }
                 }
+                // 处理响应的字符串
+                ResponseUtil util = new ResponseUtil(mString);
+                Object[] objects = util.getResponseCode();
+                Log.i("mThread/code", objects[1].toString());
+                Log.i("mThread/descripte", objects[2].toString());
                 msg.what = HANDLED;
                 mHandler.sendMessage(msg);
 
@@ -130,6 +138,9 @@ public class MainActivity extends Activity {
         // 初始化webview控件
         mBrowser = (WebView) findViewById(R.id.browser);
 
+        // 启动线程,连接socket
+        mThread.start();
+
         mBrowser.getSettings().setJavaScriptEnabled(true);
         mBrowser.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -141,12 +152,11 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
         mCode = "<html><head>test</head><body>hello world<a href='www.baidu.com'></a></body></html>";
 //        mBrowser.loadUrl("www.baidu.com");
         mBrowser.loadData(mCode, "text/html","UTF-8");
 
-        // 启动线程,连接socket
-        mThread.start();
     }
 
     @Override
