@@ -102,22 +102,20 @@ public class MainActivity extends Activity {
 
                 boolean flag = true;
                 // 读取socket返回的字节流
-                while (flag) {
-                    String str = mReader.readLine();
-                    if (str != null) {
-                        Log.i("mReadThread", str);
-                        mString += str;
-                        mString += "\n";
-                    }
-                    if (mReader.read() == -1) {
-                        flag =false;
-                    }
+                String str = null;
+                while ((str = mReader.readLine()) != null) {
+                    mString += str;
+                    mString += "\n";
+                    Log.i("mReadThread", str);
                 }
+
                 // 处理响应的字符串
                 ResponseUtil util = new ResponseUtil(mString);
                 Object[] objects = util.getResponseCode();
+                String mimeType = util.getMimeType();
                 Log.i("mThread/code", objects[1].toString());
                 Log.i("mThread/descripte", objects[2].toString());
+                Log.i("mThread/mime-Type", mimeType);
                 msg.what = HANDLED;
                 mHandler.sendMessage(msg);
 
