@@ -15,6 +15,7 @@ public class ResponseUtil {
      */
     private final static String CONTENT_TYPE = "Content-Type";
     private final static String CONTENT_LENGTH = "Content-Length";
+    private final static String SERVER = "Server";
     private final static String CONNECTION = "Connection";
     private final static String DATE = "Date";
     private final static String ETAG = "ETag";
@@ -60,34 +61,121 @@ public class ResponseUtil {
     /**
      * 获取响应的mime-Type
      *
-     * @return 响应头存在mime-type,则返回mime-type,否则返回null<br/>
+     * @return 响应头存在mime-type(content-type),则返回mime-type,否则返回null<br/>
      *         mime-type的类型,String类型
      */
     public String getMimeType() {
-        String mimeType = "";
-        boolean isHave = false;
+        String mimeType;
         if (mResStr != null) {
             for (String str : mResStrArray){
                 if (str.contains(CONTENT_TYPE)) {
-                    String[] cache = str.split(": ");
+                    String[] cache = splitStrBySpace(str, ": ");
                     mimeType = cache[1];
-                    isHave = true;
-                    break;
+                    return mimeType;
                 }
             }
-        }
-        if (isHave) {
-            return mimeType;
         }
         return null;
     }
 
     /**
      * 获取响应内容的长度
-     * @return
+     *
+     * @return 响应头如果存在content-length,则返回long类型的长度 <br/>
+     *         否则返回0
      */
     public long getResponseLength() {
-        return 1;
+        long length = 0;
+        if (mResStr != null) {
+            for (String str : mResStrArray){
+                if (str.contains(CONTENT_LENGTH)) {
+                    String[] cache = splitStrBySpace(str, ": ");
+                    length = Long.parseLong(cache[1]);
+                    return length;
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * 获取响应头中的server信息
+     * @return 响应头如果存在Server参数，则返回server的值 <br/>
+     *          否则返回null <br/>
+     */
+    public String getServer() {
+        String server;
+        if (mResStr != null) {
+            for (String str : mResStrArray){
+                if (str.contains(SERVER)) {
+                    String[] cache = splitStrBySpace(str, ": ");
+                    server = cache[1];
+                    return server;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取响应头中的日期时间
+     *
+     * @return 响应头如果存在Date参数，则返回Date的值 <br/>
+     *          否则返回null <br/>
+     */
+    public String getDate() {
+        String date;
+        if (mResStr != null) {
+            for (String str : mResStrArray){
+                if (str.contains(CONTENT_LENGTH)) {
+                    String[] cache = splitStrBySpace(str, ": ");
+                    date = cache[1];
+                    return date;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取响应头中的ETag
+     *
+     * @return 响应头如果存在ETag参数，则返回ETag的值 <br/>
+     *          否则返回null <br/>
+     */
+    public String getETag() {
+        String eTag;
+        if (mResStr != null) {
+            for (String str : mResStrArray){
+                if (str.contains(ETAG)) {
+                    String[] cache = splitStrBySpace(str, ": ");
+                    eTag = cache[1];
+                    return eTag;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取响应报文的body部分,由于http报文形式为 header + 空行 + body形式，
+     * 故我们在获取报文主体时,只要将报文中按第一个空行将报文切割开即可
+     *
+     * @return 如果报文主体不为空,则返回报文体（String类型）、否则返回null
+     */
+    public String getResponseStrBody() {
+        int i = 0;
+        for (String str : mResStrArray) {
+            if (str.equals("")) {
+                break;
+            }
+            i ++;
+        }
+        String cache = "";
+        for (int j = i; j < mResStrArray.length; j++) {
+            cache += mResStrArray[j];
+        }
+        return cache;
     }
 
     /**

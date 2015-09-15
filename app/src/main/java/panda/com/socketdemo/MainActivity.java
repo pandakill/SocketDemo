@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
     private WebView mBrowser;
     private String mString = "";
     private String mCode;
+    private String mMimeType;
 
     private final static String HOST = "www.baidu.com"; // 百度的ip地址 180.97.33.107
     private final static int POST = 443; //百度的端口 80
@@ -36,6 +37,9 @@ public class MainActivity extends Activity {
     private final static int CONNECT = 100; // 连接成功代码
     private final static int BOND    = 200; // 响应开始代码
     private final static int HANDLED = 300; // 字节流处理完毕代码
+    private final static int DISPLAY = 222; // 源码加载完毕,可以将源码显示
+
+    private final static String CHAR_SET = "UTF-8"; // 编码
 
     // 线程处理
     private Handler mHandler = new Handler() {
@@ -50,6 +54,9 @@ public class MainActivity extends Activity {
             }
             if (msg.what == HANDLED) {
                 Log.i("mHandler", "字节流处理完毕");
+            }
+            if (msg.what == DISPLAY) {
+                mBrowser.loadData(mCode, mMimeType, CHAR_SET);
             }
         }
     };
@@ -83,8 +90,9 @@ public class MainActivity extends Activity {
                 mWriter = new PrintWriter(new OutputStreamWriter(mSocket.getOutputStream()));
 
                 // 拼装请求头
-                mWriter.println("HTTP/1.1 ");
-                mWriter.println("Host: www.baidu.com");
+                mWriter.println("GET /?from=2001a HTTP/1.1");
+                mWriter.println("Host: m.baidu.com");
+                mWriter.println("Mozilla/5.0 (Linux; U; Android 4.3; zh-CN; SM-G7108V Build/JLS36C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/10.4.0.558 U3/0.8.0 Mobile Safari/534.30");
                 mWriter.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 mWriter.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
                 mWriter.println("Accept-Encoding: gzip, deflate");
@@ -100,8 +108,8 @@ public class MainActivity extends Activity {
                 }
                 mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
 
-                boolean flag = true;
                 // 读取socket返回的字节流
+                // 修正了读取的方法,避免出现字节丢失
                 String str = null;
                 while ((str = mReader.readLine()) != null) {
                     mString += str;
@@ -110,13 +118,15 @@ public class MainActivity extends Activity {
                 }
 
                 // 处理响应的字符串
-                ResponseUtil util = new ResponseUtil(mString);
-                Object[] objects = util.getResponseCode();
-                String mimeType = util.getMimeType();
-                Log.i("mThread/code", objects[1].toString());
-                Log.i("mThread/descripte", objects[2].toString());
-                Log.i("mThread/mime-Type", mimeType);
-                msg.what = HANDLED;
+//                ResponseUtil util = new ResponseUtil(mString);
+//                Object[] objects = util.getResponseCode();
+//                mMimeType = util.getMimeType();
+//                mCode = util.getResponseStrBody();
+//                Log.i("mThread/code", objects[1].toString());
+//                Log.i("mThread/descripte", objects[2].toString());
+//                Log.i("mThread/mime-Type", mMimeType);
+//                Log.i("mThread/body", mCode);
+                msg.what = DISPLAY;
                 mHandler.sendMessage(msg);
 
             } catch (UnknownHostException ee){
@@ -152,7 +162,6 @@ public class MainActivity extends Activity {
         });
 
         mCode = "<html><head>test</head><body>hello world<a href='www.baidu.com'></a></body></html>";
-//        mBrowser.loadUrl("www.baidu.com");
         mBrowser.loadData(mCode, "text/html","UTF-8");
 
     }
