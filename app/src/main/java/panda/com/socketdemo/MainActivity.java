@@ -32,8 +32,12 @@ public class MainActivity extends Activity {
     private String mCode;
     private String mMimeType;
 
-    private final static String HOST = "www.baidu.com"; // 百度的ip地址 180.97.33.107
-    private final static int POST = 443; //百度的端口 80
+    /**
+     * 百度:www.baidu.com 端口:443
+     * qq杀毒:m.qq.com 端口:80
+     */
+    private final static String HOST = "m.qq.com";
+    private final static int POST = 80;
 
     private final static int CONNECT = 100; // 连接成功代码
     private final static int BOND    = 200; // 响应开始代码
@@ -92,12 +96,12 @@ public class MainActivity extends Activity {
                 mWriter = new PrintWriter(new OutputStreamWriter(mSocket.getOutputStream()));
 
                 // 拼装请求头
-                mWriter.println("Host: www.baidu.com");
-                mWriter.println("Mozilla/5.0 (Linux; U; Android 4.3; zh-CN; SM-G7108V Build/JLS36C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/10.4.0.558 U3/0.8.0 Mobile Safari/534.30");
-                mWriter.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                mWriter.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
-                mWriter.println("Accept-Encoding: gzip, deflate");
-                mWriter.println("Connection: keep-alive");
+                // 这里的请求头一定要注意,报文格式的结束符是\r\n
+                // 这里纠结了一个下午,一直把\r写成了\\r！！！罪过啊。。。
+                mWriter.println("GET /wap/index.jsp HTTP/1.1\r");
+                mWriter.println("Host: m.qq.com\r");
+                mWriter.println("Connection: keep-alive\r");
+                mWriter.println("\r");
 
                 mWriter.flush();
 
