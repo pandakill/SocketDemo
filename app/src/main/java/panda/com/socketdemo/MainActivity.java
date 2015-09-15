@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
@@ -39,7 +40,7 @@ public class MainActivity extends Activity {
     private final static int HANDLED = 300; // 字节流处理完毕代码
     private final static int DISPLAY = 222; // 源码加载完毕,可以将源码显示
 
-    private final static String CHAR_SET = "UTF-8"; // 编码
+    private final static String CHAR_SET = "utf-8"; // 编码
 
     // 线程处理
     private Handler mHandler = new Handler() {
@@ -56,7 +57,8 @@ public class MainActivity extends Activity {
                 Log.i("mHandler", "字节流处理完毕");
             }
             if (msg.what == DISPLAY) {
-                mBrowser.loadData(mCode, mMimeType, CHAR_SET);
+                // 只有在mime-type后面加";charset=UTF-8"才可以解决乱码问题,在第三个参数设置并不能解决乱码
+                mBrowser.loadData(mCode, mMimeType + "; charset=UTF-8", CHAR_SET);
             }
         }
     };
@@ -145,9 +147,6 @@ public class MainActivity extends Activity {
         // 初始化webview控件
         mBrowser = (WebView) findViewById(R.id.browser);
 
-        // 启动线程,连接socket
-        mThread.start();
-
         mBrowser.getSettings().setJavaScriptEnabled(true);
         mBrowser.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -160,6 +159,9 @@ public class MainActivity extends Activity {
             }
         });
 
+        // 启动线程,连接socket
+        mThread.start();
+
     }
 
     @Override
@@ -169,5 +171,15 @@ public class MainActivity extends Activity {
         if (mThread != null) {
             mThread.interrupt();
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // 如果按下返回键,则控制浏览器为后退
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && mBrowser.canGoBack()) {
+            mBrowser.goBack();
+            return true;
+        }
+        return false;
     }
 }
