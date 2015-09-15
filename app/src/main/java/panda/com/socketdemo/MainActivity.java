@@ -90,8 +90,7 @@ public class MainActivity extends Activity {
                 mWriter = new PrintWriter(new OutputStreamWriter(mSocket.getOutputStream()));
 
                 // 拼装请求头
-                mWriter.println("GET /?from=2001a HTTP/1.1");
-                mWriter.println("Host: m.baidu.com");
+                mWriter.println("Host: www.baidu.com");
                 mWriter.println("Mozilla/5.0 (Linux; U; Android 4.3; zh-CN; SM-G7108V Build/JLS36C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/10.4.0.558 U3/0.8.0 Mobile Safari/534.30");
                 mWriter.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 mWriter.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3");
@@ -118,14 +117,14 @@ public class MainActivity extends Activity {
                 }
 
                 // 处理响应的字符串
-//                ResponseUtil util = new ResponseUtil(mString);
-//                Object[] objects = util.getResponseCode();
-//                mMimeType = util.getMimeType();
-//                mCode = util.getResponseStrBody();
-//                Log.i("mThread/code", objects[1].toString());
-//                Log.i("mThread/descripte", objects[2].toString());
-//                Log.i("mThread/mime-Type", mMimeType);
-//                Log.i("mThread/body", mCode);
+                ResponseUtil util = new ResponseUtil(mString);
+                Object[] objects = util.getResponseCode();
+                mMimeType = util.getMimeType();
+                mCode = util.getResponseStrBody();
+                Log.i("mThread/code", objects[1].toString());
+                Log.i("mThread/descripte", objects[2].toString());
+                Log.i("mThread/mime-Type", mMimeType);
+                Log.i("mThread/body", mCode);
                 msg.what = DISPLAY;
                 mHandler.sendMessage(msg);
 
@@ -160,9 +159,6 @@ public class MainActivity extends Activity {
                 }
             }
         });
-
-        mCode = "<html><head>test</head><body>hello world<a href='www.baidu.com'></a></body></html>";
-        mBrowser.loadData(mCode, "text/html","UTF-8");
 
     }
 
