@@ -46,13 +46,15 @@ public class ResponseUtil {
             // 响应头的第一行为响应状态和请求的http版本
             String state = mResStrArray[0];
             String str[] = splitStrBySpace(state, " ");
-            // 第一个字符串为http请求版本
-            objects[0] = str[0];
-            // 第二个字符串为请求响应码
-            objects[1] = Integer.parseInt(str[1]);
-            // 第三个字符串是请求响应码的简要描述
-            for (int i = 2; i < str.length; i ++) {
-                objects[2] = objects[2] + str[i] + " ";
+            if (str != null && str.length >= 3) {
+                // 第一个字符串为http请求版本
+                objects[0] = str[0];
+                // 第二个字符串为请求响应码
+                objects[1] = Integer.parseInt(str[1]);
+                // 第三个字符串是请求响应码的简要描述
+                for (int i = 2; i < str.length; i ++) {
+                    objects[2] = objects[2] + str[i] + " ";
+                }
             }
         }
         return objects;
