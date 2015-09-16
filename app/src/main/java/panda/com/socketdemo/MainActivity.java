@@ -67,6 +67,8 @@ public class MainActivity extends Activity implements Runnable {
             if (msg.what == DISPLAY) {
                 // 只有在mime-type后面加";charset=UTF-8"才可以解决乱码问题,在第三个参数设置并不能解决乱码
                 mBrowser.loadData(mCode, mMimeType + "; charset=UTF-8", CHAR_SET);
+                // 唤起刷新按钮
+                mRefreshBtn.setEnabled(true);
             }
         }
     };
@@ -85,6 +87,7 @@ public class MainActivity extends Activity implements Runnable {
 
         // 初始化刷新按钮空间
         mRefreshBtn = (Button) findViewById(R.id.btn_refresh);
+        mRefreshBtn.setEnabled(false);
 
         mBrowser.getSettings().setJavaScriptEnabled(true);
         mBrowser.setWebChromeClient(new WebChromeClient() {
@@ -106,12 +109,8 @@ public class MainActivity extends Activity implements Runnable {
             @Override
             public void onClick(View v) {
                 Log.i("mOnClick", mThread.getState() + "");
-//                synchronized(mThread){
-//                    Log.i("synchronized", mThread.getName());
-//                    mThread.notify();
-//                }
-//                try {
                 Log.i("new之前的线程数：", Thread.activeCount()+"");
+                // 线程执行完毕会死掉、所以在点击刷新时、重新新建一个线程
                 mThread = new Thread(MainActivity.this, "new");
                 mThread.start();
                 Log.i("new之后的线程数：", Thread.activeCount()+"");
