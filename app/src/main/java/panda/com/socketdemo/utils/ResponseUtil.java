@@ -191,6 +191,7 @@ public class ResponseUtil {
     private String[] splitStrBySpace(String str, String split) {
         String[] result = null;
         StringTokenizer token = new StringTokenizer(str, split);
+        result = new String[token.countTokens()];
         int i = 0;
         while (token.hasMoreElements()) {
             result[i] = (String) token.nextElement();

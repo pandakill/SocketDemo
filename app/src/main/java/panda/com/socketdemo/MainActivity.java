@@ -11,6 +11,7 @@ import android.view.View.OnClickListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import panda.com.socketdemo.utils.ResponseUtil;
+import panda.com.socketdemo.utils.UrlUtil;
 
 
 public class MainActivity extends Activity implements Runnable {
@@ -31,6 +33,8 @@ public class MainActivity extends Activity implements Runnable {
     private PrintWriter mWriter;
 
     private WebView mBrowser;
+    private TextView mUrlTv;
+    private Button mEnterBtn;
     private Button mRefreshBtn;
 
     private String mString = "";
@@ -89,6 +93,10 @@ public class MainActivity extends Activity implements Runnable {
         mRefreshBtn = (Button) findViewById(R.id.btn_refresh);
         mRefreshBtn.setEnabled(false);
 
+        // 初始化url输入框
+        mUrlTv = (TextView) findViewById(R.id.tv_url);
+        mEnterBtn = (Button) findViewById(R.id.btn_enter);
+
         mBrowser.getSettings().setJavaScriptEnabled(true);
         mBrowser.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -114,6 +122,17 @@ public class MainActivity extends Activity implements Runnable {
                 mThread = new Thread(MainActivity.this, "new");
                 mThread.start();
                 Log.i("new之后的线程数：", Thread.activeCount()+"");
+            }
+        });
+
+        mEnterBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = mUrlTv.getText().toString();
+                UrlUtil util = new UrlUtil(url);
+                Log.i("enter/host", util.getmHost());
+                Log.i("enter/port", util.getmPort()+"");
+                Log.i("enter/agreement", util.getmAgreement());
             }
         });
 
