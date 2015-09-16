@@ -54,7 +54,6 @@ public class MainActivity extends Activity {
                 Log.i("mHandler", "连接成功");
             }
             if (msg.what == BOND) {
-//                mReadThread.start();
                 Log.i("mHandler", "响应开始");
             }
             if (msg.what == HANDLED) {
@@ -121,6 +120,11 @@ public class MainActivity extends Activity {
                     mString += "\n";
                     Log.i("mReadThread", str);
                 }
+
+                // 读取完毕、关闭输入输出流、以及关闭socket连接
+                mWriter.close();
+                mReader.close();
+                mSocket.close();
 
                 // 处理响应的字符串
                 ResponseUtil util = new ResponseUtil(mString);
