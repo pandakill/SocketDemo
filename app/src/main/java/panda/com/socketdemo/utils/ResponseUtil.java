@@ -28,7 +28,7 @@ public class ResponseUtil {
      */
     public ResponseUtil (String response) {
         mResStr = response;
-        mResStrArray = mResStr.split("\n");
+        mResStrArray = splitStrBySpace(mResStr, "\n");
     }
 
     /**

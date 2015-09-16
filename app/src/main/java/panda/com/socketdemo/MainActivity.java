@@ -176,7 +176,7 @@ public class MainActivity extends Activity implements Runnable {
             // 这里的请求头一定要注意,报文格式的结束符是\r\n
             // 这里纠结了一个下午,一直把\r写成了\\r！！！罪过啊。。。
             mWriter.println("GET /wap/index.jsp HTTP/1.1\r");
-            mWriter.println("Host: m.qq.com\r");
+            mWriter.println("Host: " + HOST + "\r");
             mWriter.println("Connection: keep-alive\r");
             mWriter.println("\r");
 
