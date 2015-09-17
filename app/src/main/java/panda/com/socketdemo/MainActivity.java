@@ -1,6 +1,7 @@
 package panda.com.socketdemo;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -36,6 +37,8 @@ public class MainActivity extends Activity implements Runnable {
     private TextView mUrlTv;
     private Button mEnterBtn;
     private Button mRefreshBtn;
+
+    private ProgressDialog mProDialog;
 
     private String mCode;
     private String mMimeType;
@@ -74,6 +77,7 @@ public class MainActivity extends Activity implements Runnable {
                 mBrowser.loadData(mCode, mMimeType + "; charset=UTF-8", CHAR_SET);
                 // 唤起刷新按钮
                 mRefreshBtn.setEnabled(true);
+                mProDialog.dismiss();
             }
         }
     };
@@ -112,11 +116,13 @@ public class MainActivity extends Activity implements Runnable {
 
         // 启动线程,连接socket
         mThread.start();
+        mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
 
         // 刷新按钮的监听器
         mRefreshBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
                 mRefreshBtn.setEnabled(false);
                 Log.i("mOnClick", mThread.getState() + "");
                 Log.i("new之前的线程数：", Thread.activeCount()+"");
@@ -130,6 +136,7 @@ public class MainActivity extends Activity implements Runnable {
         mEnterBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
                 String url = mUrlTv.getText().toString();
                 mRefreshBtn.setEnabled(false);
                 if (url.equals("")) {
