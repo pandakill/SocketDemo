@@ -116,6 +116,7 @@ public class MainActivity extends Activity implements Runnable {
         mRefreshBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                mRefreshBtn.setEnabled(false);
                 Log.i("mOnClick", mThread.getState() + "");
                 Log.i("new之前的线程数：", Thread.activeCount()+"");
                 // 线程执行完毕会死掉、所以在点击刷新时、重新新建一个线程
