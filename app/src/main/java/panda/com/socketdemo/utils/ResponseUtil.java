@@ -187,7 +187,6 @@ public class ResponseUtil {
      * @return 字符数组
      */
     private String[] splitStrBySpace(String str, String split) {
-        String[] result = str.split(split);
-        return result;
+        String[] result = str.split(split);        return result;
     }
 }
