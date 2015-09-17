@@ -1,3 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package panda.com.socketdemo.utils;
 
 import java.util.StringTokenizer;
@@ -16,26 +34,6 @@ public class UrlUtil {
     private int mPort;
     private String mAddress;
 
-    public String getmUrlWithoutAgm() {
-        return mUrlWithoutAgm;
-    }
-
-    public String getmAgreement() {
-        return mAgreement;
-    }
-
-    public String getmHost() {
-        return mHost;
-    }
-
-    public int getmPort() {
-        return mPort;
-    }
-
-    public String getmAddress() {
-        return mAddress;
-    }
-
     /**
      * 构造函数、初始化url地址
      * @param url 传入的url地址
@@ -43,6 +41,26 @@ public class UrlUtil {
     public UrlUtil (String url) {
         mUrl = url;
         setUrlAndAgreement();
+    }
+
+    public String getUrlWithoutAgm() {
+        return mUrlWithoutAgm;
+    }
+
+    public String getAgreement() {
+        return mAgreement;
+    }
+
+    public String getHost() {
+        return mHost;
+    }
+
+    public int getPort() {
+        return mPort;
+    }
+
+    public String getAddress() {
+        return mAddress;
     }
 
     /**
