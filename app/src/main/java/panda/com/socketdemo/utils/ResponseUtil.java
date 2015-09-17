@@ -1,7 +1,5 @@
 package panda.com.socketdemo.utils;
 
-import java.util.StringTokenizer;
-
 /**
  * 请求头响应处理类
  *
@@ -189,14 +187,6 @@ public class ResponseUtil {
      * @return 字符数组
      */
     private String[] splitStrBySpace(String str, String split) {
-        String[] result = null;
-        StringTokenizer token = new StringTokenizer(str, split);
-        result = new String[token.countTokens()];
-        int i = 0;
-        while (token.hasMoreElements()) {
-            result[i] = (String) token.nextElement();
-            i ++;
-        }
-        return result;
+        String[] result = str.split(split);        return result;
     }
 }
