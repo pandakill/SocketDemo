@@ -91,7 +91,7 @@ public class UrlUtil {
         if (cache != null) {
             if (cache.length > 1) {
                 for (int i = 1; i < cache.length; i++) {
-                    mAddress += cache[i];
+                    mAddress += cache[i] + "/";
                 }
             }
             String cache2[] = splitStrBySpace(cache[0], ":");

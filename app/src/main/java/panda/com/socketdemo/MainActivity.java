@@ -12,6 +12,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +37,6 @@ public class MainActivity extends Activity implements Runnable {
     private Button mEnterBtn;
     private Button mRefreshBtn;
 
-    private String mString = "";
     private String mCode;
     private String mMimeType;
 
@@ -44,8 +44,9 @@ public class MainActivity extends Activity implements Runnable {
      * 百度:www.baidu.com 端口:443
      * qq杀毒:m.qq.com 端口:80
      */
-    private final static String HOST = "m.qq.com";
-    private final static int POST = 80;
+    private static String HOST = "m.qq.com";
+    private static int POST = 80;
+    private static String URL = "/wap/index.jsp";
 
     private final static int CONNECT = 100; // 连接成功代码
     private final static int BOND    = 200; // 响应开始代码
@@ -130,12 +131,26 @@ public class MainActivity extends Activity implements Runnable {
             @Override
             public void onClick(View v) {
                 String url = mUrlTv.getText().toString();
-                UrlUtil util = new UrlUtil(url);
-                Log.i("enter/host", util.getHost());
-                Log.i("enter/port", util.getPort()+"");
-                Log.i("enter/agreement", util.getAgreement());
+                mRefreshBtn.setEnabled(false);
+                if (url.equals("")) {
+                    Toast.makeText(MainActivity.this, "请输入地址", Toast.LENGTH_SHORT).show();
+                } else {
+                    UrlUtil util = new UrlUtil(url);
+                    Log.i("enter/host", util.getHost());
+                    Log.i("enter/port", util.getPort()+"");
+                    Log.i("enter/agreement", util.getAgreement());
+                    Log.i("enter/address", util.getAddress());
+                    if (util.getAgreement().equals("http") && util.getHost() != null) {
+                        HOST = util.getHost();
+                        POST = util.getPort();
+                        URL  = util.getAddress();
+                        mThread = new Thread(MainActivity.this, "enterUrl");
+                        mThread.start();
+                    }
+                }
             }
-        });    }
+        });
+    }
 
     @Override
     protected void onDestroy() {
@@ -193,7 +208,7 @@ public class MainActivity extends Activity implements Runnable {
             // 拼装请求头
             // 这里的请求头一定要注意,报文格式的结束符是\r\n
             // 这里纠结了一个下午,一直把\r写成了\\r！！！罪过啊。。。
-            mWriter.println("GET /wap/index.jsp HTTP/1.1\r");
+            mWriter.println("GET " + URL + " HTTP/1.1\r");
             mWriter.println("Host: " + HOST + "\r");
             mWriter.println("Connection: keep-alive\r");
             mWriter.println("\r");
@@ -211,6 +226,7 @@ public class MainActivity extends Activity implements Runnable {
             // 读取socket返回的字节流
             // 修正了读取的方法,避免出现字节丢失
             String str;
+            String mString = "";
             while ((str = mReader.readLine()) != null) {
                 mString += str;
                 mString += "\n";
