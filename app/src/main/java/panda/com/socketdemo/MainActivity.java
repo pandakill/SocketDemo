@@ -1,10 +1,9 @@
 package panda.com.socketdemo;
 
 import android.app.Activity;
-import android.os.Handler;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -155,7 +154,7 @@ public class MainActivity extends Activity implements Runnable {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         // 如果按下返回键,则控制浏览器为后退
         if ((keyCode == KeyEvent.KEYCODE_BACK) && mBrowser.canGoBack()) {
             mBrowser.goBack();
