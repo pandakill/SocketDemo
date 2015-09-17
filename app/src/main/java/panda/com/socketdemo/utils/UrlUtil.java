@@ -1,24 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package panda.com.socketdemo.utils;
-
-import java.util.StringTokenizer;
 
 /**
  * url地址的工具类，用于处理url地址
@@ -85,11 +65,11 @@ public class UrlUtil {
                 mUrlWithoutAgm = cache[1];
                 // 获取协议
                 mAgreement = cache[0];
-                // 调用方法获取服务器地址、端口号和UR地址
-                setAddress();
             } else {
                 mUrlWithoutAgm = cache[0];
             }
+            // 调用方法获取服务器地址、端口号和UR地址
+            setAddress();
         }
     }
 
@@ -107,6 +87,7 @@ public class UrlUtil {
     private void setAddress() {
         String cache[] = splitStrBySpace(mUrlWithoutAgm, "/");
         mAddress = "/";
+        mPort = 80;
         if (cache != null) {
             if (cache.length > 1) {
                 for (int i = 1; i < cache.length; i++) {
@@ -114,8 +95,8 @@ public class UrlUtil {
                 }
             }
             String cache2[] = splitStrBySpace(cache[0], ":");
+            mHost = cache2[0];
             if (cache2.length == 2) {
-                mHost = cache2[0];
                 mPort = Integer.parseInt(cache2[1]);
             }
         }
@@ -128,14 +109,7 @@ public class UrlUtil {
      * @return 字符数组
      */
     private String[] splitStrBySpace(String str, String split) {
-        String[] result = null;
-        StringTokenizer token = new StringTokenizer(str, split);
-        result = new String[token.countTokens()];
-        int i = 0;
-        while (token.hasMoreElements()) {
-            result[i] = (String) token.nextElement();
-            i ++;
-        }
+        String[] result = str.split(split);
         return result;
     }
 }
