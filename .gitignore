@@ -8,3 +8,4 @@
 /captures
 .setting
 app/app.iml
+.idea/*

@@ -1,6 +1,7 @@
 package panda.com.socketdemo.utils;
 
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -102,6 +103,12 @@ public class StringSpiltTest {
         for (int i = 0; i < cache2.length; i++) {
             System.out.print(cache2[i] + " ");
         }
+//        Matcher matcher = pattern.matcher(url);
+//        StringBuffer buffer = new StringBuffer();
+//        while (matcher.find()) {
+//            buffer.append(matcher.group());
+//            buffer.append("\r\n");
+//        }
         System.out.println("\n第三种话费时间:" + (System.nanoTime() - st3));
 
     }

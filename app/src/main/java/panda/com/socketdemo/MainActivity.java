@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Handler;
 import android.os.Bundle;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -19,7 +20,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 import panda.com.socketdemo.utils.ResponseUtil;
 import panda.com.socketdemo.utils.UrlUtil;
@@ -55,8 +55,9 @@ public class MainActivity extends Activity implements Runnable {
 
     private final static String CHAR_SET = "utf-8"; // 编码
 
-    // 线程处理
+    // 消息处理
     private Handler mHandler = new Handler() {
+        @SuppressWarnings("discall")
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == CONNECT) {
@@ -130,13 +131,11 @@ public class MainActivity extends Activity implements Runnable {
             public void onClick(View v) {
                 String url = mUrlTv.getText().toString();
                 UrlUtil util = new UrlUtil(url);
-                Log.i("enter/host", util.getmHost());
-                Log.i("enter/port", util.getmPort()+"");
-                Log.i("enter/agreement", util.getmAgreement());
+                Log.i("enter/host", util.getHost());
+                Log.i("enter/port", util.getPort()+"");
+                Log.i("enter/agreement", util.getAgreement());
             }
-        });
-
-    }
+        });    }
 
     @Override
     protected void onDestroy() {
@@ -156,7 +155,7 @@ public class MainActivity extends Activity implements Runnable {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
         // 如果按下返回键,则控制浏览器为后退
         if ((keyCode == KeyEvent.KEYCODE_BACK) && mBrowser.canGoBack()) {
             mBrowser.goBack();
@@ -211,7 +210,7 @@ public class MainActivity extends Activity implements Runnable {
 
             // 读取socket返回的字节流
             // 修正了读取的方法,避免出现字节丢失
-            String str = null;
+            String str;
             while ((str = mReader.readLine()) != null) {
                 mString += str;
                 mString += "\n";
@@ -238,8 +237,6 @@ public class MainActivity extends Activity implements Runnable {
             Log.i("synchronized", mThread.getName());
             Log.i("mThread running thread", Thread.activeCount() + Thread.currentThread().getName());
 
-        } catch (UnknownHostException ee){
-            ee.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
