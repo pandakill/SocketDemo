@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -232,21 +233,30 @@ public class MainActivity extends Activity implements Runnable {
 
             // 读取socket返回的字节流
             // 修正了读取的方法,避免出现字节丢失
-            String str;
-            String mString = "";
-            while ((str = mReader.readLine()) != null) {
-                mString += str;
-                mString += "\n";
-                Log.i("mReadThread", str);
+            String cacheStr;
+            String str = "";
+
+            InputStream in = mSocket.getInputStream();
+            // 字节流缓冲区
+            byte[] inByte = new byte[1024];
+            while ((in.read(inByte)) != -1) {
+                Log.d("inputStreamByte", new String(inByte));
             }
 
+//            while ((cacheStr = mReader.readLine()) != null) {
+//                str += cacheStr;
+//                str += "\n";
+//                Log.i("mReadThread", cacheStr);
+//            }
+
+            in.close();
             // 读取完毕、关闭输入输出流、以及关闭socket连接
             mWriter.close();
             mReader.close();
             mSocket.close();
 
             // 处理响应的字符串
-            ResponseUtil util = new ResponseUtil(mString);
+            ResponseUtil util = new ResponseUtil(str);
             Object[] objects = util.getResponseCode();
             mMimeType = util.getMimeType();
             mCode = util.getResponseStrBody();
