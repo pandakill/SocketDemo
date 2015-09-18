@@ -3,4 +3,8 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="url_hint">请输入地址</string>
+    <string name="download">下载</string>
+    <string name="enter">跳转</string>
+    <string name="refresh">刷新</string>
 </resources>

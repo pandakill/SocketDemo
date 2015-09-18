@@ -18,7 +18,7 @@
             android:id="@+id/tv_url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="请输入地址"/>
+            android:hint="@string/url_hint"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -27,16 +27,21 @@
             android:layout_gravity="center">
 
             <Button
+                android:id="@+id/btn_download"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/download"/>
+            <Button
                 android:id="@+id/btn_enter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="跳转"/>
+                android:text="@string/enter"/>
 
             <Button
                 android:id="@+id/btn_refresh"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="刷新"/>
+                android:text="@string/refresh"/>
 
         </LinearLayout>
 
@@ -46,5 +51,26 @@
         android:id="@+id/browser"
         android:layout_width="fill_parent"
         android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/ll_download"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="match_parent"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_height="16dp"/>
+
+        <TextView
+            android:id="@+id/tv_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"/>
+
+    </LinearLayout>
 
 </LinearLayout>

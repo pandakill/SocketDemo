@@ -17,17 +17,14 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import panda.com.socketdemo.utils.ResponseUtil;
-import panda.com.socketdemo.utils.UrlUtil;
+import panda.com.socketdemo.model.Uri;
+import panda.com.socketdemo.thread.HttpRequest;
 
 
-public class MainActivity extends Activity implements Runnable {
+public class MainActivity extends Activity {
 
     private Socket mSocket;
 
@@ -45,12 +42,14 @@ public class MainActivity extends Activity implements Runnable {
     private String mMimeType;
 
     /**
-     * 百度:www.baidu.com 端口:443
-     * qq杀毒:m.qq.com 端口:80
+     * 默认打开网址
      */
-    private static String HOST = "m.qq.com";
+    private static String HOST = "www.haosou.com";
     private static int POST = 80;
-    private static String URL = "/wap/index.jsp";
+    private static String URL = "/";
+
+    private Uri mUri;
+    private Thread mThread;
 
     private final static int CONNECT = 100; // 连接成功代码
     private final static int BOND    = 200; // 响应开始代码
@@ -60,8 +59,8 @@ public class MainActivity extends Activity implements Runnable {
     private final static String CHAR_SET = "utf-8"; // 编码
 
     // 消息处理
+    @SuppressWarnings("discall")
     private Handler mHandler = new Handler() {
-        @SuppressWarnings("discall")
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == CONNECT) {
@@ -75,17 +74,14 @@ public class MainActivity extends Activity implements Runnable {
             }
             if (msg.what == DISPLAY) {
                 // 只有在mime-type后面加";charset=UTF-8"才可以解决乱码问题,在第三个参数设置并不能解决乱码
-                mBrowser.loadData(mCode, mMimeType + "; charset=UTF-8", CHAR_SET);
+                mCode = (String) msg.obj;
+                mBrowser.loadData(mCode, "text/html; charset=UTF-8", CHAR_SET);
                 // 唤起刷新按钮
                 mRefreshBtn.setEnabled(true);
                 mProDialog.dismiss();
             }
         }
     };
-
-    // 新建线程1,用于连接socket
-    private Thread mThread = new Thread(this, "mThread");
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,7 +111,9 @@ public class MainActivity extends Activity implements Runnable {
             }
         });
 
-        // 启动线程,连接socket
+        // 新建并启动线程,连接socket
+        mUri = new Uri(HOST + ":" + POST + URL);
+        mThread = new HttpRequest(mUri, mHandler);
         mThread.start();
         mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
 
@@ -128,7 +126,7 @@ public class MainActivity extends Activity implements Runnable {
                 Log.i("mOnClick", mThread.getState() + "");
                 Log.i("new之前的线程数：", Thread.activeCount()+"");
                 // 线程执行完毕会死掉、所以在点击刷新时、重新新建一个线程
-                mThread = new Thread(MainActivity.this, "new");
+                mThread = new HttpRequest(mUri, mHandler);
                 mThread.start();
                 Log.i("new之后的线程数：", Thread.activeCount()+"");
             }
@@ -143,16 +141,13 @@ public class MainActivity extends Activity implements Runnable {
                 if (url.equals("")) {
                     Toast.makeText(MainActivity.this, "请输入地址", Toast.LENGTH_SHORT).show();
                 } else {
-                    UrlUtil util = new UrlUtil(url);
-                    Log.i("enter/host", util.getHost());
-                    Log.i("enter/port", util.getPort()+"");
-                    Log.i("enter/agreement", util.getAgreement());
-                    Log.i("enter/address", util.getAddress());
-                    if (util.getAgreement().equals("http") && util.getHost() != null) {
-                        HOST = util.getHost();
-                        POST = util.getPort();
-                        URL  = util.getAddress();
-                        mThread = new Thread(MainActivity.this, "enterUrl");
+                    mUri = new Uri(url);
+                    Uri uri = new Uri(url);
+                    if (mUri.getAgreement().equals("http") && mUri.getHost() != null) {
+                        HOST = mUri.getHost();
+                        POST = mUri.getPort();
+                        URL  = mUri.getUrl();
+                        mThread = new HttpRequest(uri, mHandler);
                         mThread.start();
                     }
                 }
@@ -185,93 +180,5 @@ public class MainActivity extends Activity implements Runnable {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void run() {
-        Message msg = new Message();
-        Log.i("mThread", "socket连接线程开启");
-        // 建立socket连接
-        try {
-            // 设置true,是将返回结果以字节流形式获取
-            mSocket = new Socket(HOST, POST);
-
-            // 处理连接异常
-            if ( ! mSocket.isConnected() )
-            {
-                Log.e("mThread/error", "socket未连接");
-                return;
-            }
-
-            // 发送请求消息
-            if ( mSocket.isOutputShutdown( ) )
-            {
-                Log.e("mThread/error", "socket输出流被关闭,无法发送请求");
-                return;
-            }
-
-            System.out.println("mThread:" + mSocket.getLocalAddress());
-            mWriter = new PrintWriter(new OutputStreamWriter(mSocket.getOutputStream()));
-
-            // 拼装请求头
-            // 这里的请求头一定要注意,报文格式的结束符是\r\n
-            // 这里纠结了一个下午,一直把\r写成了\\r！！！罪过啊。。。
-            mWriter.println("GET " + URL + " HTTP/1.1\r");
-            mWriter.println("Host: " + HOST + "\r");
-            mWriter.println("Connection: keep-alive\r");
-            mWriter.println("\r");
-
-            mWriter.flush();
-
-            // 读取响应消息
-            if ( mSocket.isInputShutdown( ) )
-            {
-                Log.e("mThread/error", "socket输入流被关闭,无法读取响应消息");
-                return;
-            }
-            mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
-
-            // 读取socket返回的字节流
-            // 修正了读取的方法,避免出现字节丢失
-            String cacheStr;
-            String str = "";
-
-            InputStream in = mSocket.getInputStream();
-            // 字节流缓冲区
-            byte[] inByte = new byte[1024];
-            while ((in.read(inByte)) != -1) {
-                Log.d("inputStreamByte", new String(inByte));
-            }
-
-//            while ((cacheStr = mReader.readLine()) != null) {
-//                str += cacheStr;
-//                str += "\n";
-//                Log.i("mReadThread", cacheStr);
-//            }
-
-            in.close();
-            // 读取完毕、关闭输入输出流、以及关闭socket连接
-            mWriter.close();
-            mReader.close();
-            mSocket.close();
-
-            // 处理响应的字符串
-            ResponseUtil util = new ResponseUtil(str);
-            Object[] objects = util.getResponseCode();
-            mMimeType = util.getMimeType();
-            mCode = util.getResponseStrBody();
-            Log.i("mThread/code", objects[1].toString());
-            Log.i("mThread/descripte", objects[2].toString());
-            Log.i("mThread/mime-Type", mMimeType);
-            Log.i("mThread/body", mCode);
-            msg.what = DISPLAY;
-            mHandler.sendMessage(msg);
-
-            Log.i("synchronized", mThread.getName());
-            Log.i("mThread running thread", Thread.activeCount() + Thread.currentThread().getName());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
