@@ -3,6 +3,7 @@ package panda.com.socketdemo;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -12,40 +13,39 @@ import android.view.View.OnClickListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.io.File;
 
+import panda.com.socketdemo.listener.DownloadProgressListner;
 import panda.com.socketdemo.model.Uri;
+import panda.com.socketdemo.thread.DownloadRequest;
 import panda.com.socketdemo.thread.HttpRequest;
 
 
 public class MainActivity extends Activity {
 
-    private Socket mSocket;
-
-    private BufferedReader mReader;
-    private PrintWriter mWriter;
-
     private WebView mBrowser;
     private TextView mUrlTv;
     private Button mEnterBtn;
     private Button mRefreshBtn;
+    private Button mDownBtn;
+    private LinearLayout mDownArea;
+    private ProgressBar mProgressBar;
+    private TextView mProgressText;
 
     private ProgressDialog mProDialog;
 
     private String mCode;
-    private String mMimeType;
 
     /**
      * 默认打开网址
      */
     private static String HOST = "www.haosou.com";
-    private static int POST = 80;
+    private static int PORT = 80;
     private static String URL = "/";
 
     private Uri mUri;
@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private final static int BOND    = 200; // 响应开始代码
     private final static int HANDLED = 300; // 字节流处理完毕代码
     private final static int DISPLAY = 222; // 源码加载完毕,可以将源码显示
+    private final static int DOWNLOAD = 400; // 下载代码
 
     private final static String CHAR_SET = "utf-8"; // 编码
 
@@ -80,6 +81,16 @@ public class MainActivity extends Activity {
                 mRefreshBtn.setEnabled(true);
                 mProDialog.dismiss();
             }
+            if (msg.what == DOWNLOAD) {
+                int size=msg.getData().getInt("size");
+                mProgressBar.setProgress(size);
+                float num=(float)mProgressBar.getProgress()/(float)mProgressBar.getMax();
+                int result=(int)(num*100);
+                mProgressText.setText(result+"%");
+                if(mProgressBar.getProgress() == mProgressBar.getMax()){
+                    Toast.makeText(getApplicationContext(), "下载文成", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     };
 
@@ -99,6 +110,12 @@ public class MainActivity extends Activity {
         mUrlTv = (TextView) findViewById(R.id.tv_url);
         mEnterBtn = (Button) findViewById(R.id.btn_enter);
 
+        // 初始化下载进度栏
+        mDownBtn = (Button) findViewById(R.id.btn_download);
+        mDownArea = (LinearLayout) findViewById(R.id.ll_download);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        mProgressText = (TextView) findViewById(R.id.tv_progress);
+
         mBrowser.getSettings().setJavaScriptEnabled(true);
         mBrowser.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -112,7 +129,7 @@ public class MainActivity extends Activity {
         });
 
         // 新建并启动线程,连接socket
-        mUri = new Uri(HOST + ":" + POST + URL);
+        mUri = new Uri(HOST + ":" + PORT + URL);
         mThread = new HttpRequest(mUri, mHandler);
         mThread.start();
         mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
@@ -128,15 +145,18 @@ public class MainActivity extends Activity {
                 // 线程执行完毕会死掉、所以在点击刷新时、重新新建一个线程
                 mThread = new HttpRequest(mUri, mHandler);
                 mThread.start();
-                Log.i("new之后的线程数：", Thread.activeCount()+"");
+                Log.i("new之后的线程数：", Thread.activeCount() + "");
             }
         });
 
+        // 跳转按钮的监听器
         mEnterBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + HOST + URL));
                 String url = mUrlTv.getText().toString();
+                mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + url));
+                mBrowser.setVisibility(View.VISIBLE);
+                mDownArea.setVisibility(View.GONE);
                 mRefreshBtn.setEnabled(false);
                 if (url.equals("")) {
                     Toast.makeText(MainActivity.this, "请输入地址", Toast.LENGTH_SHORT).show();
@@ -145,11 +165,31 @@ public class MainActivity extends Activity {
                     Uri uri = new Uri(url);
                     if (mUri.getAgreement().equals("http") && mUri.getHost() != null) {
                         HOST = mUri.getHost();
-                        POST = mUri.getPort();
+                        PORT = mUri.getPort();
                         URL  = mUri.getUrl();
                         mThread = new HttpRequest(uri, mHandler);
                         mThread.start();
+                    } else {
+                        Toast.makeText(MainActivity.this, "不支持的HTTP协议或者地址输入有误", Toast.LENGTH_SHORT).show();
                     }
+                }
+            }
+        });
+
+        // 下载按钮的点击监听器
+        mDownBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String path = mUrlTv.getText().toString();
+                mDownArea.setVisibility(View.VISIBLE);
+                mBrowser.setVisibility(View.GONE);
+                // 判断sd卡是否支持写入操作
+                if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    File savedir=Environment.getExternalStorageDirectory();
+                    download(path, savedir);
+                } else {
+                    Toast.makeText(getApplicationContext(), "sd卡不存在或者写保护", Toast.LENGTH_SHORT).show();
+                    mProgressText.setText("sd卡不存在或者写保护");
                 }
             }
         });
@@ -162,14 +202,6 @@ public class MainActivity extends Activity {
         if (mThread != null) {
             mThread.interrupt();
         }
-        // 如果mSocket还在连接,则在销毁时关闭socket连接
-        if (mSocket.isConnected()) {
-            try {
-                mSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
@@ -180,5 +212,42 @@ public class MainActivity extends Activity {
             return true;
         }
         return false;
+    }
+
+    private DownloadTask task;
+
+    /**
+     * 由于用户的输入事件(点击button, 触摸屏幕....)是由主线程负责处理的，如果主线程处于工作状态，
+     * 此时用户产生的输入事件如果没能在5秒内得到处理，系统就会报“应用无响应”错误。
+     * 所以在主线程里不能执行一件比较耗时的工作，否则会因主线程阻塞而无法处理用户的输入事件，
+     * 导致“应用无响应”错误的出现。耗时的工作应该在子线程里执行。
+     */
+    private void download(String path, File savedir) {
+        task=new DownloadTask(path,savedir);
+        new Thread(task).start();
+    }
+    private class DownloadTask implements Runnable{
+        private String path;
+        private File savedir;
+        public DownloadTask(String path, File savedir) {
+            super();
+            this.path = path;
+            this.savedir = savedir;
+        }
+        @Override
+        public void run() {
+            DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3);
+            fileDownLoader.download(new DownloadProgressListner() {
+                @Override
+                public void onDownloadSize(int size) {
+                    Message msMessage=new Message();
+                    msMessage.what = DOWNLOAD;
+                    msMessage.getData().putInt("size", size);
+                    mHandler.sendMessage(msMessage);
+                }
+            });
+
+        }
+
     }
 }
