@@ -1,6 +1,8 @@
 package panda.com.socketdemo.thread;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.File;
@@ -47,7 +49,7 @@ public class DownloadRequest {
      * @param threadNum
      *          需要启动的线程数
      */
-    public DownloadRequest(Context context,String downloadurl,File savedirFile,int threadNum){
+    public DownloadRequest(Context context,String downloadurl,File savedirFile,int threadNum, Handler handler){
         try {
             Log.i("DownloadRequest","DownloadRequest下载请求启动");
             Log.i("DownloadRequest","此次请求将会开启" + threadNum + "个下载子线程");
@@ -121,6 +123,11 @@ public class DownloadRequest {
                     }
                     Log.i("DownloadRequest", "已经下载的数据长度:" + mDownloadSize);
                 }
+            } else {
+                Message msg = new Message();
+                msg.what = 444;
+                msg.getData().putInt("errorCode", responseCode);
+                handler.sendMessage(msg);
             }
 
         } catch (Exception e) {
@@ -163,20 +170,19 @@ public class DownloadRequest {
             }
             fileService.delete(mDownloadurl);
             fileService.save(mDownloadurl, data);
-            boolean notFinish = true;   //下载未完成。
-//            while(notFinish){
-//                Thread.sleep(900);
-//                for(int i=0;i<threads.length;i++){
-//                    if(this.threads[i]!=null && !this.threads[i].isfinish()){
-//                        notFinish = false;
-//                        if(threads[i].getDownloadLength() == -1){//如果下载失败，再重新下载。
-//                            this.threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
-//                            this.threads[i].setPriority(7);
-//                            this.threads[i].start();
-//                        }
-//                    }
-//                }
-//            }
+
+            // 轮询查看哪个线程还未下载完成,未下载完成的继续下载
+            for (int i = 0; i < threads.length; i ++) {
+                if (threads[i] != null && ! threads[i].isfinish()) {
+                    Thread.sleep(900);
+                    if (threads[i].getDownloadLength() == -1) {
+                        threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, data.get(i+1));
+                        threads[i].setPriority(7);
+                        threads[i].start();
+                    }
+                }
+            }
+
             if(listner != null){
                 listner.onDownloadSize(mFileSize);
             }

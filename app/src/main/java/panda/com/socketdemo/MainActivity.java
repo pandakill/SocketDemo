@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     private final static int HANDLED = 300;     // 字节流处理完毕代码
     private final static int DISPLAY = 222;     // 源码加载完毕,可以将源码显示
     private final static int DOWNLOAD = 400;    // 下载代码
+    private final static int DOWNLOAD_ERROR = 444; // 下载错误代码
 
     private final static String CHAR_SET = "utf-8"; // 编码
     private final static int ONE_MB = 1024*1024; // 1MB占的字节数
@@ -96,6 +97,11 @@ public class MainActivity extends Activity {
                     Toast.makeText(getApplicationContext(), "下载完成", Toast.LENGTH_SHORT).show();
                     mDownload.interrupt();
                 }
+            }
+            if (msg.what == DOWNLOAD_ERROR) {
+                int errorCode = msg.getData().getInt("errorCode");
+                Toast.makeText(getApplicationContext(), "HTTP请求出错,HTTP错误响应代码为：" + errorCode, Toast.LENGTH_SHORT).show();
+                mProgressText.setText("HTTP请求出错,HTTP错误响应代码为：" + errorCode);
             }
         }
     };
@@ -252,7 +258,7 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             // 默认启动三个线程进行下载
-            DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3);
+            DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3, mHandler);
             fileDownLoader.download(new DownloadProgressListner() {
                 @Override
                 public void onDownloadSize(int size) {
