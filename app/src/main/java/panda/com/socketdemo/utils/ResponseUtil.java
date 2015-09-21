@@ -175,7 +175,15 @@ public class ResponseUtil {
             for (String str : mResHeader){
                 if (str.contains(CONTENT_LENGTH)) {
                     List<String> cache = splitStrBySpace(str, ": ");
-                    mContentLength = Integer.parseInt(cache.get(1));
+                    String num = cache.get(1);
+                    if (num.contains("\r") ) {
+                        num = splitStrBySpace(num, "\r").get(0);
+                    } else if(num.contains("\n")){
+                        num = splitStrBySpace(num, "\n").get(0);
+                    } else if (num.contains("\r\n")) {
+                        num = splitStrBySpace(num, "\r\n").get(0);
+                    }
+                    mContentLength = Integer.parseInt(num);
                     return mContentLength;
                 }
             }
