@@ -21,6 +21,7 @@ public class FileService {
         super();
         this.openHelper =new DBOpenHelper(context);//创建数据库对象
     }
+
     /**
      * 保存每条线程已经下载的长度
      * <b>方法描述：</b><br/>
@@ -46,6 +47,7 @@ public class FileService {
         }
         db.close();
     }
+
     /**
      * 获取每条线程已经下载的数据长度
      * <b>方法描述：</b><br/>
@@ -66,6 +68,7 @@ public class FileService {
         db.close();
         return data;
     }
+
     /**
      * 实时更新每条线程已经下载的文件长度
      * <b>方法描述：</b><br/>
@@ -82,6 +85,7 @@ public class FileService {
         db.execSQL("update filedownloadlog set downlength=? where downloadpath=? and threadid=?", new Object[]{pos,path,threadid});
         db.close();
     }
+
     /**
      * 删除下载记录，当文件下载完成后
      * <b>方法描述：</b><br/>

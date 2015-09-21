@@ -41,6 +41,8 @@ public class MainActivity extends Activity {
 
     private String mCode;
 
+    private Thread mDownload;
+
     /**
      * 默认打开网址
      */
@@ -51,13 +53,14 @@ public class MainActivity extends Activity {
     private Uri mUri;
     private Thread mThread;
 
-    private final static int CONNECT = 100; // 连接成功代码
-    private final static int BOND    = 200; // 响应开始代码
-    private final static int HANDLED = 300; // 字节流处理完毕代码
-    private final static int DISPLAY = 222; // 源码加载完毕,可以将源码显示
-    private final static int DOWNLOAD = 400; // 下载代码
+    private final static int CONNECT = 100;     // 连接成功代码
+    private final static int BOND    = 200;     // 响应开始代码
+    private final static int HANDLED = 300;     // 字节流处理完毕代码
+    private final static int DISPLAY = 222;     // 源码加载完毕,可以将源码显示
+    private final static int DOWNLOAD = 400;    // 下载代码
 
     private final static String CHAR_SET = "utf-8"; // 编码
+    private final static int ONE_MB = 1024*1024; // 1MB占的字节数
 
     // 消息处理
     @SuppressWarnings("discall")
@@ -82,13 +85,16 @@ public class MainActivity extends Activity {
                 mProDialog.dismiss();
             }
             if (msg.what == DOWNLOAD) {
-                int size=msg.getData().getInt("size");
+                int size = msg.getData().getInt("size");
+                Log.i("MainActivity", "size=" + size);
                 mProgressBar.setProgress(size);
-                float num=(float)mProgressBar.getProgress()/(float)mProgressBar.getMax();
-                int result=(int)(num*100);
-                mProgressText.setText(result+"%");
+                float num = (float)mProgressBar.getProgress()/(float)mProgressBar.getMax();
+                int result = (int)(num*100);
+                float allSize = size/ONE_MB;
+                mProgressText.setText("下载文件大小为:" + (float)(Math.round(allSize*100))/100 + "Mb   下载进度:" + result+"%");
                 if(mProgressBar.getProgress() == mProgressBar.getMax()){
-                    Toast.makeText(getApplicationContext(), "下载文成", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "下载完成", Toast.LENGTH_SHORT).show();
+                    mDownload.interrupt();
                 }
             }
         }
@@ -183,9 +189,12 @@ public class MainActivity extends Activity {
                 String path = mUrlTv.getText().toString();
                 mDownArea.setVisibility(View.VISIBLE);
                 mBrowser.setVisibility(View.GONE);
+                mProgressBar.setProgress(0);
+                mProgressText.setText("");
+                mRefreshBtn.setEnabled(false);
                 // 判断sd卡是否支持写入操作
                 if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                    File savedir=Environment.getExternalStorageDirectory();
+                    File savedir = Environment.getExternalStorageDirectory();
                     download(path, savedir);
                 } else {
                     Toast.makeText(getApplicationContext(), "sd卡不存在或者写保护", Toast.LENGTH_SHORT).show();
@@ -224,8 +233,14 @@ public class MainActivity extends Activity {
      */
     private void download(String path, File savedir) {
         task=new DownloadTask(path,savedir);
-        new Thread(task).start();
+        mDownload = new Thread(task);
+        mDownload.setName("download");
+        mDownload.start();
     }
+
+    /**
+     * 下载的Runnable,用于启动DownloadRequest线程
+     */
     private class DownloadTask implements Runnable{
         private String path;
         private File savedir;
@@ -236,18 +251,17 @@ public class MainActivity extends Activity {
         }
         @Override
         public void run() {
+            // 默认启动三个线程进行下载
             DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3);
             fileDownLoader.download(new DownloadProgressListner() {
                 @Override
                 public void onDownloadSize(int size) {
-                    Message msMessage=new Message();
+                    Message msMessage = new Message();
                     msMessage.what = DOWNLOAD;
                     msMessage.getData().putInt("size", size);
                     mHandler.sendMessage(msMessage);
                 }
             });
-
         }
-
     }
 }

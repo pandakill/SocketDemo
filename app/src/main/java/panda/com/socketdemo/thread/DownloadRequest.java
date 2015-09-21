@@ -25,14 +25,14 @@ import panda.com.socketdemo.utils.ResponseUtil;
 public class DownloadRequest {
 
     private Context mContext;
-    private File mSaveFile;         //本地保存文件
-    private String mDownloadurl;    //下载路径
-    private int mFileSize=0;        //文件大小
-    private int mDownloadSize=0;    //已经下载的文件大小
-    private FileService fileService; //下载记录操作的业务对象
+    private File mSaveFile;         // 本地保存文件
+    private String mDownloadurl;    // 下载路径
+    private int mFileSize=0;        // 文件大小
+    private int mDownloadSize=0;    // 已经下载的文件大小
+    private FileService fileService; // 下载记录操作的业务对象
     private DownloadThread[]  threads;
-    private int block;              //每条线程下载的数据长度
-    private Map<Integer, Integer> data=new ConcurrentHashMap<>();//缓存各线程下载的长度
+    private int block;              // 每条线程下载的数据长度
+    private Map<Integer, Integer> data=new ConcurrentHashMap<>();// 缓存各线程下载的长度
 
 
     /**
@@ -52,7 +52,6 @@ public class DownloadRequest {
             Log.i("DownloadRequest","DownloadRequest下载请求启动");
             Log.i("DownloadRequest","此次请求将会开启" + threadNum + "个下载子线程");
             this.mDownloadurl=downloadurl;
-//            URL url = new URL(downloadurl);
             Uri uri = new Uri(downloadurl);
             threads = new DownloadThread[threadNum];
             this.mContext = context;
@@ -62,26 +61,31 @@ public class DownloadRequest {
             socket.setSoTimeout(5000);
             PrintWriter writer = new PrintWriter(socket.getOutputStream());
             InputStream inputStream = socket.getInputStream();
+            Log.i("DownloadRequest/uri.getUrl", uri.getUrl());
+            Log.i("DownloadRequest/uri.getHost", uri.getHost());
+            Log.i("DownloadRequest/uri.getPort", uri.getPort()+"");
 
-            // 封装请求头
+            // 拼装请求头
             writer.println("GET " + uri.getUrl() + " HTTP/1.1\r");
-            writer.println("Accept: image/gif, image/jpeg, image/pjpeg, image/pjpeg, application/x-shockwave-flash, application/xaml+xml, application/vnd.ms-xpsdocument, application/x-ms-xbap, application/x-ms-application, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/msword, */*\r");
-            writer.println("Accept-Language: zh-CN\r");
-            writer.println("Charset: UTF-8");
-            writer.println("Connection: Keep-Alive");
+            writer.println("Host: " + uri.getHost());
+            writer.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r");
+            writer.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3\r");
+            writer.println("Accept-Encoding: gzip, deflate\r");
+            writer.println("Connection: keep-alive\r");
+            writer.println("\r");
 
             writer.flush();
 
-            // 字节流缓冲区
-            int max = 1024*1024;
+            // 字节流缓冲区,只要读取请求头部分出来解析即可
+            int max = 2048;
             byte[] inByte = new byte[max];
             String str;
-            int count;
-            StringBuilder builder1 = new StringBuilder();
             ArrayList<byte[]> array = new ArrayList<>();
-            while ((count = inputStream.read(inByte)) != -1) {
+            while (inputStream.read(inByte) != -1) {
                 array.add(inByte);
-                builder1.append(new String(inByte, 0, count));
+                if (array.size() == 1) {
+                    break;
+                }
             }
             str = new String(array.get(0));
 
@@ -94,16 +98,21 @@ public class DownloadRequest {
             ResponseUtil util = new ResponseUtil(str);
             int responseCode = (int) util.getResponseCode()[1];
 
+            Log.i("DownloadRequest", "下载请求的响应码是:" + responseCode);
+            Log.i("DownloadRequest", "下载请求的响应类型是:" + util.getMimeType());
+            Log.i("DownloadRequest", "下载文件大小是:" + util.getResponseLength());
+
             if(responseCode == 200){
                 mFileSize = util.getResponseLength();
                 block = ((mFileSize % threads.length) == 0) ? (mFileSize / threads.length) : (mFileSize / threads.length + 1);//计算每条线程下载的数据长度
                 String fileName = downloadurl.substring(downloadurl.lastIndexOf("/") + 1);//获得文件名
+                Log.i("DownloadRequest", "下载保存至本地的文件名:" + fileName);
                 this.mSaveFile = new File(savedirFile, fileName);
                 fileService = new FileService(context);
                 Map<Integer, Integer> logdata = fileService.getData(downloadurl);
-                if(logdata.size() > 0){//如果存在下载记录
+                if(logdata.size() > 0){                         //如果存在下载记录
                     for(Map.Entry<Integer, Integer> entry: logdata.entrySet()){
-                        data.put(entry.getKey(), entry.getValue());//把各条线程已经下载的数据长度放入data中。
+                        data.put(entry.getKey(), entry.getValue()); //把各条线程已经下载的数据长度放入data中。
                     }
                 }
                 if(data.size() == threads.length){//计算所有线程已经下载的数据总长度
@@ -112,14 +121,13 @@ public class DownloadRequest {
                     }
                     Log.i("DownloadRequest", "已经下载的数据长度:" + mDownloadSize);
                 }
-
-
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     /**
      * 开始下载文件
      * <b>方法描述：</b><br/>
@@ -135,13 +143,11 @@ public class DownloadRequest {
                 accessFile.setLength(mFileSize);
             }
             accessFile.close();
-            //TODO 这个url要删除
-//            URL url = new URL(mDownloadurl);
             Uri uri = new Uri(mDownloadurl);
             if(data.size() != threads.length){  //如果原先下载的线程数和现在下载的线程数不一致
                 this.data.clear();  //对原来的map集合清空
                 for(int i = 0; i < threads.length; i++){
-                    data.put(i + 1, 0); //初始化每天线程已经下载的数据长度为0
+                    data.put(i + 1, 0); //初始化每条线程已经下载的数据长度为0
                 }
                 mDownloadSize = 0;
             }
@@ -157,24 +163,22 @@ public class DownloadRequest {
             }
             fileService.delete(mDownloadurl);
             fileService.save(mDownloadurl, data);
-            boolean notFinish = true;//下载未完成。
-            while(notFinish){
-                Thread.sleep(900);
-                for(int i=0;i<threads.length;i++){
-                    if(this.threads[i]!=null && !this.threads[i].isfinish()){
-                        notFinish=true;
-                        if(threads[i].getDownloadLength()==-1){//如果下载失败，再重新下载。
-                            this.threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
-                            this.threads[i].setPriority(7);
-                            this.threads[i].start();
-                        }
-
-                    }
-                }
-                if(listner != null){
-                    listner.onDownloadSize(mDownloadSize);
-                }
-
+            boolean notFinish = true;   //下载未完成。
+//            while(notFinish){
+//                Thread.sleep(900);
+//                for(int i=0;i<threads.length;i++){
+//                    if(this.threads[i]!=null && !this.threads[i].isfinish()){
+//                        notFinish = false;
+//                        if(threads[i].getDownloadLength() == -1){//如果下载失败，再重新下载。
+//                            this.threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
+//                            this.threads[i].setPriority(7);
+//                            this.threads[i].start();
+//                        }
+//                    }
+//                }
+//            }
+            if(listner != null){
+                listner.onDownloadSize(mFileSize);
             }
 
         }catch(Exception e){
@@ -190,7 +194,7 @@ public class DownloadRequest {
      * @param downlength
      *          最后下载的长度
      */
-    public synchronized  void update(int threadId,int downlength){
+    public synchronized void update(int threadId, int downlength){
         this.data.put(threadId, downlength);
         fileService.update(this.mDownloadurl, threadId, downlength);
     }
@@ -200,7 +204,7 @@ public class DownloadRequest {
      * @param size
      *          当前下载的大小
      */
-    public synchronized void  append(int size){
+    public synchronized void append(int size){
         this.mDownloadSize += size;
     }
 
