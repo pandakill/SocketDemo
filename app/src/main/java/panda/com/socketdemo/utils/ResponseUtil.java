@@ -40,6 +40,7 @@ public class ResponseUtil {
     private final static String CONTENT_LENGTH = "Content-Length";
     private final static String LOCATION = "Location";
     private final static int END = 0; //响应体的结束符,如果Content-length不存在的话
+    public final static int TYPE_HEADER = 1111; //类型为响应头
 
     /**
      * 构造函数,初始化字符串类型的响应结果
@@ -50,6 +51,22 @@ public class ResponseUtil {
         mResStr = response;
         mResStrArray = splitStrBySpace(mResStr, "\n");
         getResHeader();
+    }
+
+    /**
+     * 构造函数,传入响应头和类型,即可使用该工具类的部分方法,包括如下方法:
+     * {@see getResponseCode} 获取响应行
+     * {@see getMimeType} 获取响应类型
+     *
+     * @param header
+     *          字符串类型的响应头
+     * @param type
+     *          {@code TYPE_HEADER} 响应头的类型
+     */
+    public ResponseUtil (String header, int type) {
+        if (type == TYPE_HEADER) {
+            mResHeader = splitStrBySpace(header, "\n");
+        }
     }
 
     /**
