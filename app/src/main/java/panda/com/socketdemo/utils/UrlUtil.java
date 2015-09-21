@@ -78,9 +78,12 @@ public class UrlUtil {
      * 示例：
      * 如果
      *      mUrlWithoutAgm = www.baidu.com/index.php/1
-     * 或者 mUrlWithoutAgm = www.baidu.com:80/index.php/1
+     * 或者
+     *      mUrlWithoutAgm = www.baidu.com:80/index.php/1
+     * 或者
+     *      mUrlWithoutAgm = www.baidu.com
      * 则
-     *      mAddress = /index.php/1
+     *      mAddress = /index.php/1 或者 mAddress = /
      *      mHost = www.baidu.com
      *      mPort = 80
      */
@@ -91,7 +94,11 @@ public class UrlUtil {
         if (cache != null) {
             if (cache.length > 1) {
                 for (int i = 1; i < cache.length; i++) {
-                    mAddress += cache[i] + "/";
+                    if (i == (cache.length - 1)) {
+                        mAddress += cache[i];
+                    } else {
+                        mAddress += cache[i] + "/";
+                    }
                 }
             }
             String cache2[] = splitStrBySpace(cache[0], ":");
