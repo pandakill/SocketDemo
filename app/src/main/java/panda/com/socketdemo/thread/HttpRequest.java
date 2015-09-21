@@ -118,6 +118,7 @@ public class HttpRequest extends Thread {
             // 拼装Http请求头
             mWriter.println(mMethod + " " + mUrl + " HTTP/1.1\r");
             mWriter.println("Host: " + mHost + "\r");
+            mWriter.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             mWriter.println("Connection: keep-alive\r");
             mWriter.println("\r");
 

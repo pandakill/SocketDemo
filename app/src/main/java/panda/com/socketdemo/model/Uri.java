@@ -45,4 +45,9 @@ public class Uri {
         url = util.getAddress();
         port = util.getPort();
     }
+
+    @Override
+    public String toString() {
+        return agreement + "://" + host + ":" + port + url;
+    }
 }
