@@ -18,6 +18,7 @@
             android:id="@+id/tv_url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="http://sc.chinaz.com/style/images/t2.jpg"
             android:hint="@string/url_hint"/>
 
         <LinearLayout

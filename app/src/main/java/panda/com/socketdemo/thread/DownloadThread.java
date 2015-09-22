@@ -67,54 +67,55 @@ public class DownloadThread extends Thread {
 
                 writer.flush();
 
-                byte[] buffer = new byte[1024*1024];
+                // 在这里踩坑了！！尼玛！！
+                // 字节流的操作还不熟悉、、回去继续看一下
+                byte[] buffer = new byte[1024*1024*50];
                 int len;
-                RandomAccessFile accessFile = new RandomAccessFile(mSaveFile, "rw");
-                int current = 0;
+                RandomAccessFile accessFile = new RandomAccessFile(mSaveFile, "rwd");
                 String header = null;
                 boolean isHeader = false;
-                int responseCode = -1;
+                int responseCode;
 
                 accessFile.seek(startPos);
+                int current = 0; // 响应头在字节流的位置
+                boolean findHead = true; // 是否需要在该缓冲的字节数组中寻找响应头
+
                 while ((len = inputStream.read(buffer)) != -1) {
-                    // 截取请求头、以及响应body
-                    for (int i = 0; i < buffer.length; i ++) {
-                        if (buffer[i] == '\r' && buffer[i+1] == '\n'
-                                && buffer[i+2] == '\r' && buffer[i+3] == '\n') {
-                            current = i;
-                            isHeader = true;
-                            break;
-                        }
-                    }
-                    // 获取字节流当中的响应头
-                    if (isHeader) {
-                        isHeader = false;
-                        header = new String(buffer, 0, current);
-                        Log.i("DownloadThread", "第" + mThreadID + "个线程的header:\n" + header);
-                        ResponseUtil util = new ResponseUtil(header, ResponseUtil.TYPE_HEADER);
-                        responseCode = (int) util.getResponseCode()[1];
-                        if (responseCode == 206) {
-                            accessFile.write(buffer, current + 4, len);
-                            mDownLength += (len-(current+4));
-                            mDownRequest.update(this.mThreadID, len-(current+4));
-                        } else {
-                            Log.e("DownloadThread", "线程" + mThreadID + "出现HTTP请求错误,HTTP响应码为:" + responseCode);
-                        }
-                    } else {
-                        // 如果响应头已经存在,则改部分缓冲字节流为body
-                        if (header != null) {
-                            if (responseCode == 206) {
-                                accessFile.write(buffer, 0, len);
-                                mDownLength += len;
-                                mDownRequest.update(this.mThreadID, len);
-                            } else {
-                                Log.e("DownloadThread", "线程" + mThreadID + "出现HTTP请求错误,HTTP响应码为:" + responseCode);
+                    // 截取请求头
+                    if (findHead) {
+                        for (int i = 0; i < buffer.length; i ++) {
+                            if (buffer[i] == '\r' && buffer[i+1] == '\n'
+                                    && buffer[i+2] == '\r' && buffer[i+3] == '\n') {
+                                current = i;
+                                header = new String(buffer, 0, current);
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的header:\n" + header);
+                                isHeader = true;
+                                findHead = false;
+                                break;
                             }
                         }
+                        Log.i("DownloadThread", "第" + mThreadID + "个findHead 的for循环循环的次数+1");
+                    }
+                    // 调用工具类,通过工具类处理响应头得到相应的值
+                    ResponseUtil util = new ResponseUtil(header, ResponseUtil.TYPE_HEADER);
+                    responseCode = (int) util.getResponseCode()[1];
+
+                    if (responseCode == 206) {
+                        if (isHeader) {
+                            isHeader = false;
+                            accessFile.write(buffer, current + 4, len);
+                        } else {
+                            accessFile.write(buffer, 0, len);
+                        }
+                        mDownLength += (len-(current+4));
+                        mDownRequest.update(this.mThreadID, len-(current+4));
+                        mDownRequest.append(len -(current+4));
+                    } else {
+                        Log.e("DownloadThread", "线程" + mThreadID + "出现HTTP请求错误,HTTP响应码为:" + responseCode);
                     }
                 }
 
-                // 关闭文件流、输入输出流
+                // 关闭文件流、输入流
                 accessFile.close();
                 inputStream.close();
                 writer.close();

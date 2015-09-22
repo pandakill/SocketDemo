@@ -64,9 +64,6 @@ public class DownloadRequest {
             socket.setSoTimeout(5000);
             PrintWriter writer = new PrintWriter(socket.getOutputStream());
             InputStream inputStream = socket.getInputStream();
-            Log.i("DownloadRequest/uri.getUrl", uri.getUrl());
-            Log.i("DownloadRequest/uri.getHost", uri.getHost());
-            Log.i("DownloadRequest/uri.getPort", uri.getPort()+"");
 
             // 拼装请求头
             writer.println("GET " + uri.getUrl() + " HTTP/1.1\r");
@@ -165,11 +162,12 @@ public class DownloadRequest {
                 }
                 mDownloadSize = 0;
             }
-            for(int i=0;i<threads.length;i++){//开启线程进行下载
-                int downloadlength=this.data.get(i+1);//给当前的第i个线程赋下载长度。
+            for(int i = 0; i<threads.length; i++){//开启线程进行下载
+                int downloadlength = this.data.get(i+1);//给当前的第i个线程赋下载长度。
                 if(downloadlength < block && mDownloadSize < mFileSize){//判断线程是否已完成下载，负责继续下载
-                    // TODO 所有线程下载均从0开始
+                    // TODO 所有线程下载均从0开始,已经将sqlite的缓存在每次下载完成后删除
                     this.threads[i]=new DownloadThread(this, block, mSaveFile, i+1, uri, 0);//线程Id从1开始
+//                    this.threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
                     this.threads[i].setPriority(7);
                     this.threads[i].start();
                 }else{
@@ -180,20 +178,23 @@ public class DownloadRequest {
             fileService.save(mDownloadurl, data);
 
             // 轮询查看哪个线程还未下载完成,未下载完成的继续下载
-            for (int i = 0; i < threads.length; i ++) {
-                if (threads[i] != null && ! threads[i].isfinish()) {
-                    Thread.sleep(900);
-                    if (threads[i].getDownloadLength() == -1) {
-                        // TODO 所有线程下载均从0开始
-                        threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, 0);
-                        threads[i].setPriority(7);
-                        threads[i].start();
+            boolean notFinish = true;
+            while (notFinish) {
+                Thread.sleep(900);
+                for (int i = 0; i < threads.length; i ++) {
+                    if (this.threads[i] != null && ! this.threads[i].isfinish()) {
+                        notFinish = true;
+                        if (threads[i].getDownloadLength() == -1) {
+                            // TODO 所有线程下载均从0开始,已经将sqlite的缓存在每次下载完成后删除
+                            threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
+                            threads[i].setPriority(7);
+                            threads[i].start();
+                        }
                     }
                 }
-            }
-
-            if(listner != null){
-                listner.onDownloadSize(mFileSize);
+                if(listner != null){
+                    listner.onDownloadSize(mFileSize, mDownloadSize);
+                }
             }
 
         }catch(Exception e){

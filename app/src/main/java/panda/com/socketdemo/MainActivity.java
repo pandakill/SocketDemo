@@ -87,15 +87,17 @@ public class MainActivity extends Activity {
             }
             if (msg.what == DOWNLOAD) {
                 int size = msg.getData().getInt("size");
-                Log.i("MainActivity", "size=" + size);
-                mProgressBar.setProgress(size);
+                int downloaded = msg.getData().getInt("downloaded");
+                mProgressBar.setMax(size);
+                mProgressBar.setProgress(downloaded);
                 float num = (float)mProgressBar.getProgress()/(float)mProgressBar.getMax();
                 int result = (int)(num*100);
                 float allSize = size/ONE_MB;
-                mProgressText.setText("下载文件大小为:" + (float)(Math.round(allSize*100))/100 + "Mb   下载进度:" + result+"%");
+                mProgressText.setText("下载文件大小为:" + (float)(Math.round(downloaded/ONE_MB*100))/100
+                        +"/" +(float)(Math.round(allSize*100))/100 + "Mb   下载进度:" + result+"%");
                 if(mProgressBar.getProgress() == mProgressBar.getMax()){
                     Toast.makeText(getApplicationContext(), "下载完成", Toast.LENGTH_SHORT).show();
-                    mDownload.interrupt();
+//                    mDownload.interrupt();
                 }
             }
             if (msg.what == DOWNLOAD_ERROR) {
@@ -261,10 +263,11 @@ public class MainActivity extends Activity {
             DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3, mHandler);
             fileDownLoader.download(new DownloadProgressListner() {
                 @Override
-                public void onDownloadSize(int size) {
+                public void onDownloadSize(int size, int current) {
                     Message msMessage = new Message();
                     msMessage.what = DOWNLOAD;
                     msMessage.getData().putInt("size", size);
+                    msMessage.getData().putInt("downloaded", current);
                     mHandler.sendMessage(msMessage);
                 }
             });
