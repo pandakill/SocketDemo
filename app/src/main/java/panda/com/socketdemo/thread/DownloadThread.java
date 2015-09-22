@@ -61,7 +61,6 @@ public class DownloadThread extends Thread {
                 writer.println("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r");
                 writer.println("Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3\r");
                 writer.println("Referer: " + mDownUri.toString() + "\r");
-//                writer.println("Charset: UTF-8\r");
                 writer.println("Range: bytes=" + startPos + "-" + endPos + "\r");
                 writer.println("Connection: keep-alive\r");
                 writer.println("\r");

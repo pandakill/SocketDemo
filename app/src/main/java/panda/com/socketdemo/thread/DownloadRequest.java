@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import panda.com.socketdemo.listener.DownloadProgressListner;
 import panda.com.socketdemo.model.Uri;
 import panda.com.socketdemo.service.FileService;
+import panda.com.socketdemo.utils.FileNameUtil;
 import panda.com.socketdemo.utils.ResponseUtil;
 
 /**
@@ -107,7 +108,13 @@ public class DownloadRequest {
             if(responseCode == 200){
                 mFileSize = util.getResponseLength();
                 block = ((mFileSize % threads.length) == 0) ? (mFileSize / threads.length) : (mFileSize / threads.length + 1);//计算每条线程下载的数据长度
-                String fileName = downloadurl.substring(downloadurl.lastIndexOf("/") + 1);//获得文件名
+                // TODO 文件名有bug
+                String fileName;
+                fileName = downloadurl.substring(downloadurl.lastIndexOf("/") + 1);//获得文件名
+                if (!fileName.contains(".")) {
+                    FileNameUtil fileNameUtil = new FileNameUtil(fileName, util.getMimeType());
+                    fileName = fileNameUtil.getFillName();
+                }
                 Log.i("DownloadRequest", "下载保存至本地的文件名:" + fileName);
                 this.mSaveFile = new File(savedirFile, fileName);
                 fileService = new FileService(context);
