@@ -174,6 +174,13 @@ public class ResponseUtil {
                 if (str.contains(CONTENT_TYPE)) {
                     List<String> cache = splitStrBySpace(str, ": ");
                     mContentType = cache.get(1);
+                    if (mContentType.contains("\r\n")) {
+                        mContentType = splitStrBySpace(mContentType, "\r\n").get(0);
+                    } else if (mContentType.contains("\r")) {
+                        mContentType = splitStrBySpace(mContentType, "\r").get(0);
+                    } else if (mContentType.contains("\n")) {
+                        mContentType = splitStrBySpace(mContentType, "\n").get(0);
+                    }
                     return mContentType;
                 }
             }
