@@ -48,6 +48,7 @@ public class DownloadThread extends Thread {
 
                 // 线程开始下载的位置
                 int startPos = mBlock * (mThreadID - 1) + mDownLength;
+                Log.i("DownloadThread", "第--" + mThreadID + "--已经下载的大小为:" + mDownLength);
                 // 线程结束下载的位置
                 int endPos = mBlock * mThreadID - 1;
                 Log.i("DownloadThread", "第--" + mThreadID + "--个开始负责的下载位置为:" + startPos + "-" + endPos );
@@ -69,7 +70,7 @@ public class DownloadThread extends Thread {
 
                 byte[] buffer = new byte[1024*1024];
                 int len;
-                RandomAccessFile accessFile = new RandomAccessFile(mSaveFile, "rwd");
+                RandomAccessFile accessFile = new RandomAccessFile(mSaveFile, "rw");
                 int current = 0;
                 String header = null;
                 boolean isHeader = false;
@@ -91,7 +92,6 @@ public class DownloadThread extends Thread {
                         isHeader = false;
                         header = new String(buffer, 0, current);
                         Log.i("DownloadThread", "第" + mThreadID + "个线程的header:\n" + header);
-                        Log.i("DownloadThread", "第" + mThreadID + "个线程的current:\n" + current);
                         ResponseUtil util = new ResponseUtil(header, ResponseUtil.TYPE_HEADER);
                         responseCode = (int) util.getResponseCode()[1];
                         if (responseCode == 206) {

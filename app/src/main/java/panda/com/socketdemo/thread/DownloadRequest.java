@@ -161,7 +161,8 @@ public class DownloadRequest {
             for(int i=0;i<threads.length;i++){//开启线程进行下载
                 int downloadlength=this.data.get(i+1);//给当前的第i个线程赋下载长度。
                 if(downloadlength < block && mDownloadSize < mFileSize){//判断线程是否已完成下载，负责继续下载
-                    this.threads[i]=new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));//线程Id从1开始
+                    // TODO 所有线程下载均从0开始
+                    this.threads[i]=new DownloadThread(this, block, mSaveFile, i+1, uri, 0);//线程Id从1开始
                     this.threads[i].setPriority(7);
                     this.threads[i].start();
                 }else{
@@ -176,7 +177,8 @@ public class DownloadRequest {
                 if (threads[i] != null && ! threads[i].isfinish()) {
                     Thread.sleep(900);
                     if (threads[i].getDownloadLength() == -1) {
-                        threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, data.get(i+1));
+                        // TODO 所有线程下载均从0开始
+                        threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, 0);
                         threads[i].setPriority(7);
                         threads[i].start();
                     }
