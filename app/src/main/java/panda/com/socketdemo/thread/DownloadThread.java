@@ -77,40 +77,36 @@ public class DownloadThread extends Thread {
                 int responseCode;
 
                 accessFile.seek(startPos);
-                int current = 0; // 响应头在字节流的位置
+                int current; // 响应头在字节流的位置
                 boolean findHead = true; // 是否需要在该缓冲的字节数组中寻找响应头
-                int count = 1;
                 while ((len = inputStream.read(buffer)) != -1) {
-                    // 截取请求头
+                    // 截取响应头
                     if (findHead) {
                         for (int i = 0; i < buffer.length; i ++) {
                             if (buffer[i] == '\r' && buffer[i+1] == '\n'
                                     && buffer[i+2] == '\r' && buffer[i+3] == '\n') {
                                 current = i;
                                 header = new String(buffer, 0, current);
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的header:\n" + header);
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的header长度为:" + current);
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "读到的字节数为:" + len);
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次写入字节数为:" + (len - (current + 4)));
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之前的标签位置是:" + accessFile.getFilePointer());
+                                // 这里是补充的,如果有请求头,则将请求头部分切掉再将body重新组装到cacheByte数组中
                                 byte[] cacheByte = new byte[len-(current+4)];
                                 int k = 0;
                                 for (int j = current+4; j < len; j ++) {
                                     cacheByte[k] = buffer[j];
                                     k ++;
                                 }
-                                accessFile.write(cacheByte, 0, (len-(current+4)));
-                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之后的标签位置是:" + accessFile.getFilePointer());
+                                // 问题就是出现在这里
+                                // accessFile.write(buffer, (len-(current+4)), len)
+                                // 并不能将buffer的(len-(current+4))到len的字节写入到文件当中,而是坑爹的将buffer全部写入
+                                // 所以要在拿到响应头之后重新新建一个字节数组存储响应body
+                                accessFile.write(cacheByte, 0, (len - (current + 4)));
                                 mDownLength += (len-(current+4));
                                 mDownRequest.update(this.mThreadID, len - (current + 4));
                                 mDownRequest.append(len - (current + 4));
-                                count ++;
                                 isHeader = true;
                                 findHead = false;
                                 break;
                             }
                         }
-                        Log.i("DownloadThread", "第" + mThreadID + "个findHead 的for循环循环的次数+1");
                     }
                     // 调用工具类,通过工具类处理响应头得到相应的值
                     ResponseUtil util = new ResponseUtil(header, ResponseUtil.TYPE_HEADER);
@@ -119,15 +115,10 @@ public class DownloadThread extends Thread {
                     if (responseCode == 206) {
                         if (isHeader) {
                             isHeader = false;
-//                            accessFile.write(buffer, current + 4, len);
                         } else {
-                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count +"次writeFile之前的标签位置是:" + accessFile.getFilePointer());
                             accessFile.write(buffer, 0, len);
-                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之后的标签位置是:" + accessFile.getFilePointer());
                             mDownLength += (len);
                             mDownRequest.update(this.mThreadID, len);
-                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次写入字节数为:" + len);
-                            count ++;
                             mDownRequest.append(len);
                         }
                     } else {

@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
 
     private final static String CHAR_SET = "utf-8"; // 编码
     private final static int ONE_MB = 1024*1024; // 1MB占的字节数
+    private final static int THREAD_COUNT = 3; // 下载的子线程数
 
     // 消息处理
     @SuppressWarnings("discall")
@@ -93,11 +94,11 @@ public class MainActivity extends Activity {
                 float num = (float)mProgressBar.getProgress()/(float)mProgressBar.getMax();
                 int result = (int)(num*100);
                 float allSize = size/ONE_MB;
-                mProgressText.setText("下载文件大小为:" + (float)(Math.round(downloaded/ONE_MB*100))/100
-                        +"/" +(float)(Math.round(allSize*100))/100 + "Mb   下载进度:" + result+"%");
+                mProgressText.setText("文件总共:" + (String.format("%.2f", allSize))
+                        + "Mb 已经下载:"+ String.format("%.2f", ((float)downloaded/ONE_MB)) + "Mb  下载进度:" + result+"%");
                 if(mProgressBar.getProgress() == mProgressBar.getMax()){
                     Toast.makeText(getApplicationContext(), "下载完成", Toast.LENGTH_SHORT).show();
-//                    mDownload.interrupt();
+                    mDownload.interrupt();
                 }
             }
             if (msg.what == DOWNLOAD_ERROR) {
@@ -260,7 +261,7 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
             // 默认启动三个线程进行下载
-            DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, 3, mHandler);
+            DownloadRequest fileDownLoader=new DownloadRequest(getApplicationContext(), path, savedir, THREAD_COUNT, mHandler);
             fileDownLoader.download(new DownloadProgressListner() {
                 @Override
                 public void onDownloadSize(int size, int current) {

@@ -105,7 +105,6 @@ public class DownloadRequest {
             if(responseCode == 200){
                 mFileSize = util.getResponseLength();
                 block = ((mFileSize % threads.length) == 0) ? (mFileSize / threads.length) : (mFileSize / threads.length + 1);//计算每条线程下载的数据长度
-                // TODO 文件名有bug
                 String fileName;
                 fileName = downloadurl.substring(downloadurl.lastIndexOf("/") + 1);//获得文件名
                 if (!fileName.contains(".")) {
@@ -167,7 +166,6 @@ public class DownloadRequest {
                 if(downloadlength < block && mDownloadSize < mFileSize){//判断线程是否已完成下载，负责继续下载
                     // TODO 所有线程下载均从0开始,已经将sqlite的缓存在每次下载完成后删除
                     this.threads[i]=new DownloadThread(this, block, mSaveFile, i+1, uri, 0);//线程Id从1开始
-//                    this.threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
                     this.threads[i].setPriority(7);
                     this.threads[i].start();
                 }else{
@@ -185,7 +183,6 @@ public class DownloadRequest {
                     if (this.threads[i] != null && ! this.threads[i].isfinish()) {
                         notFinish = true;
                         if (threads[i].getDownloadLength() == -1) {
-                            // TODO 所有线程下载均从0开始,已经将sqlite的缓存在每次下载完成后删除
                             threads[i] = new DownloadThread(this, block, mSaveFile, i+1, uri, this.data.get(i+1));
                             threads[i].setPriority(7);
                             threads[i].start();
