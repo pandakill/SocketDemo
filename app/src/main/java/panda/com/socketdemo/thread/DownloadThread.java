@@ -69,7 +69,7 @@ public class DownloadThread extends Thread {
 
                 // 在这里踩坑了！！尼玛！！
                 // 字节流的操作还不熟悉、、回去继续看一下
-                byte[] buffer = new byte[1024*1024*50];
+                byte[] buffer = new byte[1024*1024];
                 int len;
                 RandomAccessFile accessFile = new RandomAccessFile(mSaveFile, "rwd");
                 String header = null;
@@ -79,7 +79,7 @@ public class DownloadThread extends Thread {
                 accessFile.seek(startPos);
                 int current = 0; // 响应头在字节流的位置
                 boolean findHead = true; // 是否需要在该缓冲的字节数组中寻找响应头
-
+                int count = 1;
                 while ((len = inputStream.read(buffer)) != -1) {
                     // 截取请求头
                     if (findHead) {
@@ -89,6 +89,22 @@ public class DownloadThread extends Thread {
                                 current = i;
                                 header = new String(buffer, 0, current);
                                 Log.i("DownloadThread", "第" + mThreadID + "个线程的header:\n" + header);
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的header长度为:" + current);
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "读到的字节数为:" + len);
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次写入字节数为:" + (len - (current + 4)));
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之前的标签位置是:" + accessFile.getFilePointer());
+                                byte[] cacheByte = new byte[len-(current+4)];
+                                int k = 0;
+                                for (int j = current+4; j < len; j ++) {
+                                    cacheByte[k] = buffer[j];
+                                    k ++;
+                                }
+                                accessFile.write(cacheByte, 0, (len-(current+4)));
+                                Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之后的标签位置是:" + accessFile.getFilePointer());
+                                mDownLength += (len-(current+4));
+                                mDownRequest.update(this.mThreadID, len - (current + 4));
+                                mDownRequest.append(len - (current + 4));
+                                count ++;
                                 isHeader = true;
                                 findHead = false;
                                 break;
@@ -103,13 +119,17 @@ public class DownloadThread extends Thread {
                     if (responseCode == 206) {
                         if (isHeader) {
                             isHeader = false;
-                            accessFile.write(buffer, current + 4, len);
+//                            accessFile.write(buffer, current + 4, len);
                         } else {
+                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count +"次writeFile之前的标签位置是:" + accessFile.getFilePointer());
                             accessFile.write(buffer, 0, len);
+                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次writeFile之后的标签位置是:" + accessFile.getFilePointer());
+                            mDownLength += (len);
+                            mDownRequest.update(this.mThreadID, len);
+                            Log.i("DownloadThread", "第" + mThreadID + "个线程的第" + count + "次写入字节数为:" + len);
+                            count ++;
+                            mDownRequest.append(len);
                         }
-                        mDownLength += (len-(current+4));
-                        mDownRequest.update(this.mThreadID, len-(current+4));
-                        mDownRequest.append(len -(current+4));
                     } else {
                         Log.e("DownloadThread", "线程" + mThreadID + "出现HTTP请求错误,HTTP响应码为:" + responseCode);
                     }
