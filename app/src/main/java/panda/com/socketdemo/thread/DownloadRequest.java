@@ -178,7 +178,9 @@ public class DownloadRequest {
             // 轮询查看哪个线程还未下载完成,未下载完成的继续下载
             boolean notFinish = true;
             while (notFinish) {
-                Thread.sleep(900);
+                if (Thread.currentThread().getState() == Thread.State.RUNNABLE) {
+                    Thread.sleep(900);
+                }
                 for (int i = 0; i < threads.length; i ++) {
                     if (this.threads[i] != null && ! this.threads[i].isfinish()) {
                         notFinish = true;

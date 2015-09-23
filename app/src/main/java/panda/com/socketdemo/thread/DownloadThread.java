@@ -44,7 +44,6 @@ public class DownloadThread extends Thread {
         if(mDownLength < mBlock) {
             try {
                 Socket socket = new Socket(mDownUri.getHost(), mDownUri.getPort());
-//                socket.setSoTimeout(5000);
 
                 // 线程开始下载的位置
                 int startPos = mBlock * (mThreadID - 1) + mDownLength;

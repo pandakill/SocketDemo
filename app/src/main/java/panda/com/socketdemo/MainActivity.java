@@ -39,8 +39,6 @@ public class MainActivity extends Activity {
 
     private ProgressDialog mProDialog;
 
-    private String mCode;
-
     private Thread mDownload;
 
     /**
@@ -80,10 +78,11 @@ public class MainActivity extends Activity {
             }
             if (msg.what == DISPLAY) {
                 // 只有在mime-type后面加";charset=UTF-8"才可以解决乱码问题,在第三个参数设置并不能解决乱码
-                mCode = (String) msg.obj;
-                mBrowser.loadData(mCode, "text/html; charset=UTF-8", CHAR_SET);
+                String html = (String) msg.obj;
+                mBrowser.loadData(html, "text/html; charset=UTF-8", CHAR_SET);
                 // 唤起刷新按钮
                 mRefreshBtn.setEnabled(true);
+                mDownBtn.setEnabled(true);
                 mProDialog.dismiss();
             }
             if (msg.what == DOWNLOAD) {
@@ -99,12 +98,16 @@ public class MainActivity extends Activity {
                 if(mProgressBar.getProgress() == mProgressBar.getMax()){
                     Toast.makeText(getApplicationContext(), "下载完成", Toast.LENGTH_SHORT).show();
                     mDownload.interrupt();
+                    mDownBtn.setEnabled(true);
+                    mEnterBtn.setEnabled(true);
                 }
             }
             if (msg.what == DOWNLOAD_ERROR) {
                 int errorCode = msg.getData().getInt("errorCode");
                 Toast.makeText(getApplicationContext(), "HTTP请求出错,HTTP错误响应代码为：" + errorCode, Toast.LENGTH_SHORT).show();
                 mProgressText.setText("HTTP请求出错,HTTP错误响应代码为：" + errorCode);
+                mDownBtn.setEnabled(true);
+                mEnterBtn.setEnabled(true);
             }
         }
     };
@@ -172,6 +175,7 @@ public class MainActivity extends Activity {
                 mProDialog = ProgressDialog.show(MainActivity.this, "正在加载中...", ("正在打开:" + url));
                 mBrowser.setVisibility(View.VISIBLE);
                 mDownArea.setVisibility(View.GONE);
+                mDownBtn.setEnabled(false);
                 mRefreshBtn.setEnabled(false);
                 if (url.equals("")) {
                     Toast.makeText(MainActivity.this, "请输入地址", Toast.LENGTH_SHORT).show();
@@ -203,6 +207,8 @@ public class MainActivity extends Activity {
                 mRefreshBtn.setEnabled(false);
                 // 判断sd卡是否支持写入操作
                 if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    mDownBtn.setEnabled(false);
+                    mEnterBtn.setEnabled(false);
                     File savedir = Environment.getExternalStorageDirectory();
                     download(path, savedir);
                 } else {
@@ -232,8 +238,6 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    private DownloadTask task;
-
     /**
      * 由于用户的输入事件(点击button, 触摸屏幕....)是由主线程负责处理的，如果主线程处于工作状态，
      * 此时用户产生的输入事件如果没能在5秒内得到处理，系统就会报“应用无响应”错误。
@@ -241,7 +245,7 @@ public class MainActivity extends Activity {
      * 导致“应用无响应”错误的出现。耗时的工作应该在子线程里执行。
      */
     private void download(String path, File savedir) {
-        task=new DownloadTask(path,savedir);
+        DownloadTask task = new DownloadTask(path, savedir);
         mDownload = new Thread(task);
         mDownload.setName("download");
         mDownload.start();
